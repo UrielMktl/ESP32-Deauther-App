@@ -200,16 +200,16 @@ void handle_root() {
         <h2>Clonador de red (Evil-Twin educativo)</h2>
         <p>Estado clon: )" + String(clone_active() ? ("ACTIVO \"" + clone_ssid() + "\" ch " + String(clone_channel()) + " clientes " + String(clone_clients())) : "inactivo") + R"(</p>
         <p style="font-size:13px">Clona una red escaneada (mismo SSID y canal) o escribe los datos a mano. Solo en redes propias.</p>
-        <input type="text" name="net_num" placeholder="Nro de red a clonar (de la tabla)">
-        <input type="text" name="pass" placeholder="Password AP falso (vacio=abierta, min 8 para WPA2)">
+        <input type="text" name="net_num" placeholder="Nro de red a clonar, ver tabla">
+        <input type="text" name="pass" placeholder="Clave del AP falso: vacio=abierta, min 8 WPA2">
         <input type="submit" value="Clonar red seleccionada">
     </form>
 
     <form method="post" action="/clone_custom">
         <h2>Clon manual: ingresa los datos</h2>
-        <input type="text" name="ssid" placeholder="SSID a clonar (ej. MiCasa_WiFi)" maxlength="32">
+        <input type="text" name="ssid" placeholder="SSID a clonar, ej. MiCasa_WiFi" maxlength="32">
         <input type="text" name="channel" placeholder="Canal 1-13">
-        <input type="text" name="pass" placeholder="Password AP falso (vacio=abierta)">
+        <input type="text" name="pass" placeholder="Clave del AP falso: vacio=abierta">
         <input type="submit" value="Clonar con estos datos">
     </form>
 

@@ -23,7 +23,12 @@ static int sanitize_channel(int ch) {
 static bool bring_up(const String& ssid, int ch, const String& pass) {
   // El clonador y el deauth usan el mismo radio: se excluyen.
   stop_deauth();
-  stop_clone();
+  if (_active) {
+    _active = false;
+    _ssid = "";
+    _pass = "";
+    WiFi.softAPdisconnect(true);
+  }
 
   String s = sanitize_ssid(ssid);
   if (s.length() == 0) return false;
