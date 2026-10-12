@@ -6,13 +6,13 @@
   <title>ESP32-Deauther App</title>
   <style>
     :root {
-      --bg:#0b0e16; --bg2:#11151f; --card:#161b27; --line:#262d3d;
-      --accent:#22c55e; --accent2:#38bdf8; --accent3:#a78bfa;
-      --text:#e8ecf4; --muted:#9aa6bd; --warn:#f59e0b;
+      --bg:#160b0d; --bg2:#1f1113; --card:#27161a; --line:#3d262c;
+      --accent:#ef2b3c; --accent2:#fb7185; --accent3:#f59e0b;
+      --text:#f6e9eb; --muted:#c2a3a8; --warn:#f59e0b;
     }
     * { box-sizing: border-box; }
     body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-           background: radial-gradient(1200px 500px at 50% -15%, rgba(56,189,248,.18), transparent), var(--bg);
+           background: radial-gradient(1200px 500px at 50% -15%, rgba(239,43,60,.22), transparent), var(--bg);
            color:var(--text); line-height:1.65; }
     a { color:var(--accent2); text-decoration:none; }
 
@@ -28,7 +28,7 @@
     .wrap { max-width:980px; margin:0 auto; padding:0 20px 70px; }
     .actions { display:flex; gap:14px; flex-wrap:wrap; justify-content:center; margin:30px 0 10px; }
     .btn { display:inline-flex; align-items:center; gap:8px; text-decoration:none; padding:14px 22px;
-           border-radius:12px; font-weight:600; color:#04121a; background:var(--accent);
+           border-radius:12px; font-weight:600; color:#fff; background:var(--accent);
            transition:transform .08s ease, filter .2s; }
     .btn:hover { transform:translateY(-2px); filter:brightness(1.05); }
     .btn.alt { background:var(--accent2); }
@@ -40,7 +40,7 @@
     .card .ico { font-size:1.6rem; }
     .card h3 { margin:10px 0 6px; }
     .card p { color:var(--muted); margin:0; font-size:.95rem; }
-    code { background:#0a0d15; padding:2px 7px; border-radius:7px; color:#7dd3fc; font-size:.9em; }
+    code { background:#0a0d15; padding:2px 7px; border-radius:7px; color:#fda4af; font-size:.9em; }
 
     .panel { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:26px 28px; margin:34px 0; }
     .panel h2 { margin:0 0 14px; font-size:1.4rem; }
