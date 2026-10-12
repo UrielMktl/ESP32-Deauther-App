@@ -84,7 +84,7 @@ class _WifiLoginFormState extends State<WifiLoginForm> {
         const SizedBox(height: 12),
         TextField(controller: _ip, decoration: const InputDecoration(labelText: 'IP del ESP32')),
         TextField(controller: _user, decoration: const InputDecoration(labelText: 'Usuario')),
-        TextField(controller: _pass, decoration: const InputDecoration(labelText: 'Password'), obscureText: true),
+        TextField(controller: _pass, decoration: const InputDecoration(labelText: 'Contraseña'), obscureText: true),
         const SizedBox(height: 12),
         _busy
             ? const Center(child: CircularProgressIndicator())
@@ -153,10 +153,10 @@ class _BleConnectScreenState extends State<BleConnectScreen> {
         builder: (ctx) {
           final t = TextEditingController(text: 'X4xSWfuK1DtBse');
           return AlertDialog(
-            title: const Text('Login BLE'),
+            title: const Text('Acceso BLE'),
             content: TextField(
               controller: t,
-              decoration: const InputDecoration(labelText: 'Password'),
+              decoration: const InputDecoration(labelText: 'Contraseña'),
               obscureText: true,
             ),
             actions: [
@@ -238,7 +238,7 @@ class _ControlPanelState extends State<ControlPanel> {
       setState(() => _nets = n);
       _addLog('Encontradas ${n.length} redes');
     } catch (e) {
-      _addLog('Error scan: $e');
+      _addLog('Error al escanear: $e');
     } finally {
       setState(() => _busy = false);
     }
@@ -252,7 +252,7 @@ class _ControlPanelState extends State<ControlPanel> {
     setState(() => _busy = true);
     try {
       final r = await widget.controller.deauthSingle(_selected!, reasonCodes[_reason]!);
-      _addLog('Deauth red $_selected: $r');
+      _addLog('Desautenticación red $_selected: $r');
     } catch (e) {
       _addLog('Error: $e');
     } finally {
@@ -264,7 +264,7 @@ class _ControlPanelState extends State<ControlPanel> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
-        title: const Text('Deauth a TODAS las redes'),
+        title: const Text('Desautenticar TODAS las redes'),
         content: const Text('El WiFi del ESP32 se apagara. Para parar habra que '
             'resetear la placa. ¿Continuar?'),
         actions: [
@@ -277,7 +277,7 @@ class _ControlPanelState extends State<ControlPanel> {
     setState(() => _busy = true);
     try {
       final r = await widget.controller.deauthAll(reasonCodes[_reason]!);
-      _addLog('Deauth global: $r');
+      _addLog('Desautenticación global: $r');
     } catch (e) {
       _addLog('Error: $e');
     } finally {
@@ -289,7 +289,7 @@ class _ControlPanelState extends State<ControlPanel> {
     setState(() => _busy = true);
     try {
       final r = await widget.controller.stop();
-      _addLog('Stop: $r');
+      _addLog('Ataque detenido: $r');
     } catch (e) {
       _addLog('Error: $e');
     } finally {
@@ -383,7 +383,7 @@ class _ControlPanelState extends State<ControlPanel> {
                   final n = _nets[i];
                   return RadioListTile<int>(
                     title: Text('${n.num} - ${n.ssid}'),
-                    subtitle: Text('${n.bssid}  Ch:${n.channel}  ${n.rssi}dBm  ${n.enc}'),
+                    subtitle: Text('${n.bssid}  Canal:${n.channel}  ${n.rssi}dBm  ${n.enc}'),
                     value: n.num,
                     groupValue: _selected,
                     onChanged: (v) => setState(() => _selected = v),
@@ -397,14 +397,14 @@ class _ControlPanelState extends State<ControlPanel> {
                   .map((k) => DropdownMenuItem(value: k, child: Text(k)))
                   .toList(),
               onChanged: (v) => setState(() => _reason = v!),
-              decoration: const InputDecoration(labelText: 'Reason code'),
+              decoration: const InputDecoration(labelText: 'Código de motivo'),
             ),
             const SizedBox(height: 8),
             Row(
               children: [
-                Expanded(child: ElevatedButton(onPressed: _busy ? null : _deauthSingle, child: const Text('Deauth red'))),
+                Expanded(child: ElevatedButton(onPressed: _busy ? null : _deauthSingle, child: const Text('Desaut. red'))),
                 const SizedBox(width: 8),
-                Expanded(child: ElevatedButton(onPressed: _busy ? null : _deauthAll, child: const Text('Deauth TODAS'))),
+                Expanded(child: ElevatedButton(onPressed: _busy ? null : _deauthAll, child: const Text('Desaut. TODAS'))),
                 const SizedBox(width: 8),
                 Expanded(child: ElevatedButton(onPressed: _busy ? null : _stop, child: const Text('Detener'))),
               ],
@@ -427,7 +427,7 @@ class _ControlPanelState extends State<ControlPanel> {
                     keyboardType: TextInputType.number)),
                 const SizedBox(width: 8),
                 Expanded(child: TextField(controller: _clonePass,
-                    decoration: const InputDecoration(labelText: 'Pass AP falso (vacio=abierta)'))),
+                    decoration: const InputDecoration(labelText: 'Contraseña AP falso (vacío=abierta)'))),
               ],
             ),
             const SizedBox(height: 6),
@@ -441,6 +441,7 @@ class _ControlPanelState extends State<ControlPanel> {
               ],
             ),
             const SizedBox(height: 8),
+            const Text('Registro:', style: TextStyle(fontWeight: FontWeight.bold)),
             Container(
               height: 120,
               padding: const EdgeInsets.all(8),
