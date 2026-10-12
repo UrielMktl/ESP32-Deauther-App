@@ -67,9 +67,9 @@
   <header>
     <div class="badge">Proyecto educativo · solo redes propias</div>
     <h1>ESP32-Deauther App</h1>
-    <p>Controla tu ESP32 por <b>WiFi</b> o <b>Bluetooth (BLE)</b> desde el móvil, con login y flasheo por navegador.</p>
+    <p>Controla tu ESP32 por <b>WiFi</b> o <b>Bluetooth (BLE)</b> desde el móvil, con login, deauth y <b>clonador de red</b>.</p>
     <div class="actions">
-      <a class="btn" href="app-release.apk">⬇ Descargar APK</a>
+      <a class="btn" href="app-release.apk">⬇ Descargar APK v1.1 (con clonador)</a>
       <a class="btn alt" href="flash/">⚡ Flashear ESP32 / S3</a>
       <a class="btn ghost" href="https://github.com/uriel5523L/ESP32-Deauther-App">📦 Código fuente</a>
     </div>
@@ -92,6 +92,11 @@
         <h3>Login protegido</h3>
         <p>Tus propias credenciales en <code>firmware/include/secrets.h</code>. Sin contraseñas por defecto.</p>
       </div>
+      <div class="card">
+        <div class="ico">👯</div>
+        <h3>Clonador de red</h3>
+        <p>Crea un AP falso con el mismo SSID y canal, o ingresa SSID/canal/pass a mano. Solo redes propias.</p>
+      </div>
     </div>
 
     <div class="panel">
@@ -103,7 +108,18 @@
         <div class="link">📶</div>
         <div class="node"><b>📶 Redes WiFi</b><span>objetivo</span></div>
       </div>
-      <p class="note">La app manda comandos (<code>SCAN</code>, <code>DEAUTH</code>, <code>STOP</code>…) y el ESP32 los ejecuta en la red que elijas.</p>
+      <p class="note">La app manda comandos (<code>SCAN</code>, <code>DEAUTH</code>, <code>STOP</code>, <code>CLONE</code>…) y el ESP32 los ejecuta en la red que elijas.</p>
+    </div>
+
+    <div class="panel">
+      <h2>👯 Clonador de red (Evil-Twin educativo)</h2>
+      <ol class="steps">
+        <li><b>Escanea</b> redes en la app o Web UI.</li>
+        <li><b>Clona la seleccionada:</b> mismo SSID y canal. O <b>ingresa los datos a mano</b>: SSID (máx 32), canal 1-13 y pass del AP falso (vacío = abierta, ≥8 = WPA2).</li>
+        <li><b>Detén el clon</b> cuando termines: el ESP32 restaura su AP <code>ESP32-Deauther</code>.</li>
+      </ol>
+      <p class="note">API: <code>POST /api/clone</code> (con <code>net_num+pass</code> o <code>ssid+channel+pass</code>), <code>POST /api/clone_stop</code>, <code>GET /api/clone_status</code>. BLE: <code>CLONE_NET &lt;num&gt; [pass]</code>, <code>CLONE &lt;ssid&gt;|&lt;canal&gt;|&lt;pass&gt;</code>, <code>CLONE_STOP</code>.</p>
+      <p class="note warn">⚠ El clon y el deauth usan el mismo radio: al iniciar uno se apaga el otro. Solo en redes propias.</p>
     </div>
 
     <div class="panel">
@@ -114,7 +130,7 @@
         <li><b>Conéctate al WiFi</b> del ESP32: SSID <code>ESP32-Deauther</code>, password <code>esp32wroom32</code>.</li>
         <li><b>Abre la app</b> y elige <b>WiFi</b> (IP <code>192.168.4.1</code>) o <b>Bluetooth</b>. Usa el usuario/password que definiste en <code>secrets.h</code>.</li>
         <li><b>BLE:</b> pulsa “Escanear”, elige <code>ESP32-Deauther</code>, acepta los permisos Bluetooth y escribe tu password. La app ya lo trae escrito.</li>
-        <li>Escanea redes, selecciona una, elige un <b>Reason code</b> y pulsa <b>Deauth</b>.</li>
+        <li>Escanea redes, selecciona una, elige un <b>Reason code</b> y pulsa <b>Deauth</b>. Para clonar, usa la sección <b>Clonador</b> e ingresa SSID/canal/pass.</li>
       </ol>
       <p class="note warn">⚠ “Deauth all” apaga el WiFi del ESP32: para pararlo, resetea la placa. El ESP32-S3 comparte radio WiFi+BLE; si el BLE va lento, usa una cosa a la vez.</p>
       <p class="note">Solo para pruebas en redes propias. El autor no se hace responsable del mal uso.</p>
@@ -122,7 +138,7 @@
   </div>
 
   <footer>
-    ESP32-Deauther App · Firmware basado en tesa-klebeband/ESP32-Deauther (GPL-3.0)
+    ESP32-Deauther App v1.1 (clonador) · Firmware basado en tesa-klebeband/ESP32-Deauther (GPL-3.0)
   </footer>
 </body>
 </html>
