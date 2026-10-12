@@ -370,7 +370,7 @@ class _ControlPanelState extends State<ControlPanel> {
     }
   }
 
-  void _refreshStatus() async {
+  Future<void> _refreshStatus() async {
     try {
       final s = await widget.controller.statusRaw();
       setState(() => _status = s);
