@@ -222,8 +222,12 @@ class _ControlPanelState extends State<ControlPanel> {
   int? _selected;
   String _reason = reasonCodes.keys.first;
   String _status = '';
+  String _cloneStatus = '';
   String _log = '';
   bool _busy = false;
+  final _cloneSsid = TextEditingController();
+  final _cloneChannel = TextEditingController(text: '6');
+  final _clonePass = TextEditingController();
 
   void _addLog(String s) => setState(() => _log += '$s\n');
 
@@ -298,6 +302,59 @@ class _ControlPanelState extends State<ControlPanel> {
       final s = await widget.controller.statusRaw();
       setState(() => _status = s);
     } catch (_) {}
+    try {
+      final c = await widget.controller.cloneStatusRaw();
+      setState(() => _cloneStatus = c);
+    } catch (_) {}
+  }
+
+  void _cloneSelected() async {
+    if (_selected == null) {
+      _addLog('Selecciona una red para clonar');
+      return;
+    }
+    setState(() => _busy = true);
+    try {
+      final r = await widget.controller.cloneNet(_selected!, _clonePass.text.trim());
+      _addLog('Clonar red $_selected: $r');
+      await _refreshStatus();
+    } catch (e) {
+      _addLog('Error clon: $e');
+    } finally {
+      setState(() => _busy = false);
+    }
+  }
+
+  void _cloneManual() async {
+    final ssid = _cloneSsid.text.trim();
+    if (ssid.isEmpty) {
+      _addLog('Escribe el SSID a clonar');
+      return;
+    }
+    final ch = int.tryParse(_cloneChannel.text.trim()) ?? 1;
+    setState(() => _busy = true);
+    try {
+      final r = await widget.controller.cloneCustom(ssid, ch, _clonePass.text.trim());
+      _addLog('Clon manual "$ssid": $r');
+      await _refreshStatus();
+    } catch (e) {
+      _addLog('Error clon: $e');
+    } finally {
+      setState(() => _busy = false);
+    }
+  }
+
+  void _cloneStop() async {
+    setState(() => _busy = true);
+    try {
+      final r = await widget.controller.cloneStop();
+      _addLog('Clon detenido: $r');
+      await _refreshStatus();
+    } catch (e) {
+      _addLog('Error: $e');
+    } finally {
+      setState(() => _busy = false);
+    }
   }
 
   @override
@@ -312,12 +369,14 @@ class _ControlPanelState extends State<ControlPanel> {
       appBar: AppBar(title: const Text('Panel de control')),
       body: Padding(
         padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
             ElevatedButton(onPressed: _busy ? null : _scan, child: const Text('Escanear redes')),
             const SizedBox(height: 8),
-            Expanded(
+            SizedBox(
+              height: 180,
               child: ListView.builder(
                 itemCount: _nets.length,
                 itemBuilder: (_, i) {
@@ -352,14 +411,44 @@ class _ControlPanelState extends State<ControlPanel> {
             ),
             const SizedBox(height: 8),
             Text('Estado: $_status'),
-            Expanded(
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                color: Colors.black12,
-                child: SingleChildScrollView(child: Text(_log)),
-              ),
+            const Divider(),
+            const Text('Clonador de red (Evil-Twin educativo)',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text('Clona la red seleccionada o ingresa los datos a mano. Solo redes propias.',
+                style: TextStyle(fontSize: 12)),
+            Text('Clon: $_cloneStatus', style: const TextStyle(fontSize: 12)),
+            const SizedBox(height: 6),
+            TextField(controller: _cloneSsid,
+                decoration: const InputDecoration(labelText: 'SSID a clonar (manual)', hintText: 'Ej. MiCasa_WiFi')),
+            Row(
+              children: [
+                Expanded(child: TextField(controller: _cloneChannel,
+                    decoration: const InputDecoration(labelText: 'Canal (1-13)'),
+                    keyboardType: TextInputType.number)),
+                const SizedBox(width: 8),
+                Expanded(child: TextField(controller: _clonePass,
+                    decoration: const InputDecoration(labelText: 'Pass AP falso (vacio=abierta)'))),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Expanded(child: ElevatedButton(onPressed: _busy ? null : _cloneSelected, child: const Text('Clonar selec.'))),
+                const SizedBox(width: 8),
+                Expanded(child: ElevatedButton(onPressed: _busy ? null : _cloneManual, child: const Text('Clonar manual'))),
+                const SizedBox(width: 8),
+                Expanded(child: ElevatedButton(onPressed: _busy ? null : _cloneStop, child: const Text('Detener clon'))),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Container(
+              height: 120,
+              padding: const EdgeInsets.all(8),
+              color: Colors.black12,
+              child: SingleChildScrollView(child: Text(_log)),
             ),
           ],
+        ),
         ),
       ),
     );

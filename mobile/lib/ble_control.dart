@@ -14,6 +14,7 @@ String _norm(String u) => u.toLowerCase().replaceAll('-', '');
 /// Controlador BLE (Nordic UART). El ESP32 expone un servicio con
 /// caracteristica RX (write) y TX (notify). Comandos:
 ///   LOGIN <pass> | SCAN | DEAUTH <net> <reason> | DEAUTHALL <reason> | STOP | STATUS
+///   CLONE_NET <net> [pass] | CLONE <ssid>|<canal>|<pass> | CLONE_STOP | CLONE_STATUS
 class BleController implements DeautherController {
   final BluetoothDevice device;
   BluetoothCharacteristic? _rx;
@@ -97,6 +98,23 @@ class BleController implements DeautherController {
 
   Future<String> statusRaw() async {
     return _send('STATUS', expectPrefix: 'STATUS');
+  }
+
+  Future<String> cloneNet(int net, String pass) async {
+    final cmd = pass.isEmpty ? 'CLONE_NET $net' : 'CLONE_NET $net $pass';
+    return _send(cmd, expectPrefix: 'OK');
+  }
+
+  Future<String> cloneCustom(String ssid, int channel, String pass) async {
+    return _send('CLONE $ssid|$channel|$pass', expectPrefix: 'OK');
+  }
+
+  Future<String> cloneStop() async {
+    return _send('CLONE_STOP', expectPrefix: 'OK');
+  }
+
+  Future<String> cloneStatusRaw() async {
+    return _send('CLONE_STATUS', expectPrefix: 'CLONE');
   }
 
   Future<void> disconnect() async {

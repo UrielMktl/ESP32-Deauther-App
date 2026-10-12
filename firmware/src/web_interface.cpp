@@ -3,6 +3,7 @@
 #include "web_interface.h"
 #include "definitions.h"
 #include "deauth.h"
+#include "clone.h"
 
 WebServer server(80);
 int num_networks;
@@ -193,6 +194,27 @@ void handle_root() {
         <input type="submit" value="Stop Deauth-Attack">
     </form>
 
+    <form method="post" action="/clone">
+        <h2>Clonador de red (Evil-Twin educativo)</h2>
+        <p>Estado clon: )" + String(clone_active() ? ("ACTIVO \"" + clone_ssid() + "\" ch " + String(clone_channel()) + " clientes " + String(clone_clients())) : "inactivo") + R"(</p>
+        <p style="font-size:13px">Clona una red escaneada (mismo SSID y canal) o escribe los datos a mano. Solo en redes propias.</p>
+        <input type="text" name="net_num" placeholder="Nro de red a clonar (de la tabla)">
+        <input type="text" name="pass" placeholder="Password AP falso (vacio=abierta, min 8 para WPA2)">
+        <input type="submit" value="Clonar red seleccionada">
+    </form>
+
+    <form method="post" action="/clone_custom">
+        <h2>Clon manual: ingresa los datos</h2>
+        <input type="text" name="ssid" placeholder="SSID a clonar (ej. MiCasa_WiFi)" maxlength="32">
+        <input type="text" name="channel" placeholder="Canal 1-13">
+        <input type="text" name="pass" placeholder="Password AP falso (vacio=abierta)">
+        <input type="submit" value="Clonar con estos datos">
+    </form>
+
+    <form method="post" action="/clone_stop">
+        <input type="submit" value="Detener clonador">
+    </form>
+
     <h2>Reason Codes</h2>
     <table>
         <tr>
@@ -380,6 +402,34 @@ void handle_stop() {
   redirect_root();
 }
 
+void handle_clone() {
+  if (!web_authed()) { server.sendHeader("Location", "/login"); server.send(301); return; }
+  int net = server.arg("net_num").toInt();
+  String pass = server.arg("pass");
+  pass.trim();
+  if (net < 0 || net >= num_networks) { redirect_root(); return; }
+  start_clone_net(net, pass);
+  redirect_root();
+}
+
+void handle_clone_custom() {
+  if (!web_authed()) { server.sendHeader("Location", "/login"); server.send(301); return; }
+  String ssid = server.arg("ssid");
+  int ch = server.arg("channel").toInt();
+  String pass = server.arg("pass");
+  ssid.trim(); pass.trim();
+  if (ssid.length() == 0) { redirect_root(); return; }
+  if (ch < 1 || ch > CHANNEL_MAX) ch = 1;
+  start_clone_custom(ssid, ch, pass);
+  redirect_root();
+}
+
+void handle_clone_stop() {
+  if (!web_authed()) { server.sendHeader("Location", "/login"); server.send(301); return; }
+  stop_clone();
+  redirect_root();
+}
+
 // ---------------------------------------------------------------------------
 // JSON API for the companion app (additive: no original function removed)
 // ---------------------------------------------------------------------------
@@ -437,9 +487,46 @@ void handle_api_status() {
   json += "\"eliminated_stations\":" + String(eliminated_stations) + ",";
   json += "\"deauth_type\":" + String(deauth_type) + ",";
   json += "\"ap_ssid\":\"" + String(AP_SSID) + "\",";
-  json += "\"ap_ip\":\"192.168.4.1\"";
+  json += "\"ap_ip\":\"192.168.4.1\",";
+  json += "\"clone\":" + clone_status_json();
   json += "}";
   server.send(200, "application/json", json);
+}
+
+void handle_api_clone() {
+  if (!api_authed()) { server.send(401, "application/json", "{\"error\":\"unauthorized\"}"); return; }
+  bool ok = false;
+  if (server.hasArg("ssid")) {
+    // Clon manual: el usuario ingresa SSID + canal + pass
+    String ssid = server.arg("ssid");
+    int ch = server.arg("channel").toInt();
+    String pass = server.arg("pass");
+    ssid.trim(); pass.trim();
+    if (ch < 1 || ch > CHANNEL_MAX) ch = 1;
+    ok = start_clone_custom(ssid, ch, pass);
+  } else {
+    // Clon de red escaneada
+    int net = server.arg("net_num").toInt();
+    String pass = server.arg("pass");
+    pass.trim();
+    ok = start_clone_net(net, pass);
+  }
+  if (ok) {
+    server.send(200, "application/json", "{\"status\":\"ok\",\"clone\":" + clone_status_json() + "}");
+  } else {
+    server.send(400, "application/json", "{\"status\":\"error\",\"message\":\"datos de clon invalidos (ssid/canal/pass o red oculta)\"}");
+  }
+}
+
+void handle_api_clone_stop() {
+  if (!api_authed()) { server.send(401, "application/json", "{\"error\":\"unauthorized\"}"); return; }
+  stop_clone();
+  server.send(200, "application/json", "{\"status\":\"ok\",\"clone\":" + clone_status_json() + "}");
+}
+
+void handle_api_clone_status() {
+  if (!api_authed()) { server.send(401, "application/json", "{\"error\":\"unauthorized\"}"); return; }
+  server.send(200, "application/json", clone_status_json());
 }
 
 void start_web_interface() {
@@ -451,6 +538,9 @@ void start_web_interface() {
   server.on("/deauth_all", handle_deauth_all);
   server.on("/rescan", handle_rescan);
   server.on("/stop", handle_stop);
+  server.on("/clone", HTTP_POST, handle_clone);
+  server.on("/clone_custom", HTTP_POST, handle_clone_custom);
+  server.on("/clone_stop", HTTP_POST, handle_clone_stop);
 
   // JSON API endpoints for the app
   server.on("/api/login", HTTP_POST, handle_api_login);
@@ -460,6 +550,9 @@ void start_web_interface() {
   server.on("/api/deauth_all", HTTP_POST, handle_api_deauth_all);
   server.on("/api/stop", HTTP_POST, handle_api_stop);
   server.on("/api/status", handle_api_status);
+  server.on("/api/clone", HTTP_POST, handle_api_clone);
+  server.on("/api/clone_stop", HTTP_POST, handle_api_clone_stop);
+  server.on("/api/clone_status", handle_api_clone_status);
 
   server.begin();
 }

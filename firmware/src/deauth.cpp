@@ -3,6 +3,7 @@
 #include "types.h"
 #include "deauth.h"
 #include "definitions.h"
+#include "clone.h"
 
 deauth_frame_t deauth_frame;
 int deauth_type = DEAUTH_TYPE_SINGLE;
@@ -43,6 +44,8 @@ IRAM_ATTR void sniffer(void *buf, wifi_promiscuous_pkt_type_t type) {
 }
 
 void start_deauth(int wifi_number, int attack_type, uint16_t reason) {
+  // Deauth y clon usan el mismo radio/AP: al atacar se apaga el clon.
+  if (clone_active()) stop_clone();
   eliminated_stations = 0;
   deauth_type = attack_type;
 

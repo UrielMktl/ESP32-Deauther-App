@@ -7,4 +7,9 @@ abstract class DeautherController {
   Future<String> deauthAll(int reason);
   Future<String> stop();
   Future<String> statusRaw();
+  // Clonador de red (Evil-Twin educativo): el usuario ingresa los datos.
+  Future<String> cloneNet(int net, String pass);
+  Future<String> cloneCustom(String ssid, int channel, String pass);
+  Future<String> cloneStop();
+  Future<String> cloneStatusRaw();
 }

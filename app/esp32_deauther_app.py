@@ -67,12 +67,13 @@ class DeautherApp:
         self.token = None
 
         root.title("ESP32-Deauther App")
-        root.geometry("760x620")
+        root.geometry("760x760")
         root.resizable(True, True)
 
         self._build_connection_frame()
         self._build_scan_frame()
         self._build_attack_frame()
+        self._build_clone_frame()
         self._build_status_frame()
         self._build_log()
 
@@ -134,11 +135,34 @@ class DeautherApp:
         ttk.Button(f, text="Deauth a TODAS las redes", command=self.deauth_all).grid(row=1, column=1, padx=4, pady=4)
         ttk.Button(f, text="Detener", command=self.stop_attack).grid(row=1, column=2, padx=4, pady=4)
 
+    def _build_clone_frame(self):
+        f = ttk.LabelFrame(self.root, text="Clonador de red (Evil-Twin educativo: ingresa los datos)", padding=8)
+        f.pack(fill="x", padx=8, pady=4)
+
+        ttk.Label(f, text="SSID manual:").grid(row=0, column=0, sticky="w")
+        self.clone_ssid_var = tk.StringVar()
+        ttk.Entry(f, textvariable=self.clone_ssid_var, width=24).grid(row=0, column=1, padx=4)
+
+        ttk.Label(f, text="Canal (1-13):").grid(row=0, column=2, sticky="w")
+        self.clone_ch_var = tk.StringVar(value="6")
+        ttk.Entry(f, textvariable=self.clone_ch_var, width=8).grid(row=0, column=3, padx=4)
+
+        ttk.Label(f, text="Pass AP falso (vacio=abierta):").grid(row=1, column=0, sticky="w")
+        self.clone_pass_var = tk.StringVar()
+        ttk.Entry(f, textvariable=self.clone_pass_var, width=24).grid(row=1, column=1, padx=4)
+
+        ttk.Button(f, text="Clonar red seleccionada", command=self.clone_selected).grid(row=2, column=0, padx=4, pady=4)
+        ttk.Button(f, text="Clonar con estos datos", command=self.clone_manual).grid(row=2, column=1, padx=4, pady=4)
+        ttk.Button(f, text="Detener clon", command=self.clone_stop).grid(row=2, column=2, padx=4, pady=4)
+        ttk.Button(f, text="Estado clon", command=self.clone_status).grid(row=2, column=3, padx=4, pady=4)
+
     def _build_status_frame(self):
         f = ttk.LabelFrame(self.root, text="Estado", padding=8)
         f.pack(fill="x", padx=8, pady=4)
         self.status_var = tk.StringVar(value="Sin conectar")
         ttk.Label(f, textvariable=self.status_var, foreground="blue").pack(anchor="w")
+        self.clone_var = tk.StringVar(value="Clon: inactivo")
+        ttk.Label(f, textvariable=self.clone_var, foreground="green").pack(anchor="w")
 
     def _build_log(self):
         f = ttk.LabelFrame(self.root, text="Log", padding=8)
@@ -266,6 +290,45 @@ class DeautherApp:
     def stop_attack(self):
         self.log("Deteniendo ataque Deauth...")
         threading.Thread(target=self._post, args=("/api/stop", {}), daemon=True).start()
+
+    # ---------------------------------------------------------- clonador
+    def clone_selected(self):
+        num = self._selected_net_num()
+        if num is None:
+            return
+        pwd = self.clone_pass_var.get().strip()
+        self.log("Clonando red #%d (pass='%s')..." % (num, "****" if pwd else "abierta"))
+        threading.Thread(target=self._post, args=("/api/clone", {"net_num": num, "pass": pwd}), daemon=True).start()
+
+    def clone_manual(self):
+        ssid = self.clone_ssid_var.get().strip()
+        if not ssid:
+            messagebox.showwarning("Aviso", "Escribe el SSID a clonar.")
+            return
+        try:
+            ch = int(self.clone_ch_var.get().strip() or "1")
+        except ValueError:
+            ch = 1
+        pwd = self.clone_pass_var.get().strip()
+        self.log("Clonando '%s' ch=%d..." % (ssid, ch))
+        threading.Thread(target=self._post, args=("/api/clone", {"ssid": ssid, "channel": ch, "pass": pwd}), daemon=True).start()
+
+    def clone_stop(self):
+        self.log("Deteniendo clonador...")
+        threading.Thread(target=self._post, args=("/api/clone_stop", {}), daemon=True).start()
+
+    def clone_status(self):
+        def work():
+            r = self._req("GET", "/api/clone_status")
+            if r is None:
+                return
+            try:
+                data = r.json()
+                self.root.after(0, lambda: self.clone_var.set("Clon: %s" % r.text))
+                self.root.after(0, lambda: self.log("Clon: %s" % r.text))
+            except Exception:
+                self.root.after(0, lambda: self.log("Respuesta: %s" % r.text))
+        threading.Thread(target=work, daemon=True).start()
 
     def _post(self, path, data):
         r = self._req("POST", path, data=data)

@@ -1,6 +1,7 @@
 #include "definitions.h"
 #include "ble_com.h"
 #include "deauth.h"
+#include "clone.h"
 #include "web_interface.h"
 #ifdef ENABLE_BLE
 #include <WiFi.h>
@@ -30,9 +31,16 @@ class MyServerCallbacks : public NimBLEServerCallbacks {
   void onDisconnect(NimBLEServer* pServer) {
     deviceConnected = false;
     ble_authed = false;
-    // Restaurar el punto de acceso WiFi al desconectar BLE.
+    // Restaurar WiFi al desconectar BLE. Si habia un clon activo, se
+    // re-levanta el AP clonado; si no, el AP de gestion original.
     WiFi.mode(WIFI_MODE_AP);
-    WiFi.softAP(AP_SSID, AP_PASS);
+    if (clone_active() && clone_ssid().length()) {
+      String cp = clone_pass();
+      if (cp.length() >= 8) WiFi.softAP(clone_ssid().c_str(), cp.c_str(), clone_channel(), 0, 4);
+      else WiFi.softAP(clone_ssid().c_str(), NULL, clone_channel(), 0, 4);
+    } else {
+      WiFi.softAP(AP_SSID, AP_PASS);
+    }
     NimBLEDevice::startAdvertising();
   }
 };
@@ -135,7 +143,60 @@ void ble_process() {
   }
 
   if (cmd == "STATUS") {
-    ble_send("STATUS eliminadas=" + String(eliminated_stations) + " tipo=" + String(deauth_type));
+    String s = "STATUS eliminadas=" + String(eliminated_stations) + " tipo=" + String(deauth_type);
+    s += " clone=" + clone_status_json();
+    ble_send(s);
+    return;
+  }
+
+  // --- Clonador de red ---
+  // CLONE_NET <num> [pass]  -> clona red escaneada (mismo SSID/canal)
+  // CLONE <ssid>|<canal>|<pass> -> clon manual (el usuario ingresa los datos)
+  // CLONE_STOP / CLONE_STATUS
+  if (cmd.startsWith("CLONE_NET ")) {
+    String rest = cmd.substring(10);
+    rest.trim();
+    int sp = rest.indexOf(' ');
+    int net = (sp < 0 ? rest : rest.substring(0, sp)).toInt();
+    String pass = (sp < 0 ? "" : rest.substring(sp + 1));
+    pass.trim();
+    if (start_clone_net(net, pass)) {
+      ble_send("OK clon iniciado " + clone_status_json());
+    } else {
+      ble_send("ERR clon fallo (red invalida u oculta)");
+    }
+    return;
+  }
+
+  if (cmd.startsWith("CLONE ")) {
+    // Formato con pipes para permitir espacios en el SSID: CLONE Mi Red|6|pass12345
+    String rest = cmd.substring(6);
+    int p1 = rest.indexOf('|');
+    if (p1 < 0) { ble_send("ERR uso: CLONE <ssid>|<canal>|<pass>  ej: CLONE MiCasa|6|"); return; }
+    String ssid = rest.substring(0, p1);
+    String tail = rest.substring(p1 + 1);
+    int p2 = tail.indexOf('|');
+    String chStr = (p2 < 0 ? tail : tail.substring(0, p2));
+    String pass = (p2 < 0 ? "" : tail.substring(p2 + 1));
+    ssid.trim(); pass.trim();
+    int ch = chStr.toInt();
+    if (ssid.length() == 0) { ble_send("ERR ssid vacio"); return; }
+    if (start_clone_custom(ssid, ch <= 0 ? 1 : ch, pass)) {
+      ble_send("OK clon iniciado " + clone_status_json());
+    } else {
+      ble_send("ERR clon fallo");
+    }
+    return;
+  }
+
+  if (cmd == "CLONE_STOP") {
+    stop_clone();
+    ble_send("OK clon detenido");
+    return;
+  }
+
+  if (cmd == "CLONE_STATUS") {
+    ble_send("CLONE " + clone_status_json());
     return;
   }
 

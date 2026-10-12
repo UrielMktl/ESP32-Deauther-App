@@ -58,4 +58,30 @@ class WifiController implements DeautherController {
   }
 
   Future<String> statusRaw() async => jsonEncode(await status());
+
+  Future<String> cloneNet(int net, String pass) async {
+    final r = await http.post(
+        Uri.parse('$base/api/clone').replace(queryParameters: _q),
+        body: {'net_num': '$net', 'pass': pass}).timeout(const Duration(seconds: 8));
+    return r.body;
+  }
+
+  Future<String> cloneCustom(String ssid, int channel, String pass) async {
+    final r = await http.post(
+        Uri.parse('$base/api/clone').replace(queryParameters: _q),
+        body: {'ssid': ssid, 'channel': '$channel', 'pass': pass}).timeout(const Duration(seconds: 8));
+    return r.body;
+  }
+
+  Future<String> cloneStop() async {
+    final r = await http.post(
+        Uri.parse('$base/api/clone_stop').replace(queryParameters: _q)).timeout(const Duration(seconds: 8));
+    return r.body;
+  }
+
+  Future<String> cloneStatusRaw() async {
+    final r = await http.get(
+        Uri.parse('$base/api/clone_status').replace(queryParameters: _q)).timeout(const Duration(seconds: 8));
+    return r.body;
+  }
 }
