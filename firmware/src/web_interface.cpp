@@ -176,18 +176,20 @@ void handle_root() {
     </form>
 
     <form method="post" action="/deauth">
-        <h2>Lanzar ataque de desautenticación</h2>
+        <h2>🔌 Desconectar dispositivos de una red</h2>
+        <p style="font-size:13px">Expulsa temporalmente los dispositivos de la red elegida.</p>
         <input type="text" name="net_num" placeholder="Número de red">
         <input type="text" name="reason" placeholder="Código de motivo">
-        <input type="submit" value="Lanzar ataque">
+        <input type="submit" value="Desconectar red">
     </form>
 
-    <p>Estaciones eliminadas: )" + String(eliminated_stations) + R"(</p>
+    <p>Dispositivos desconectados: )" + String(eliminated_stations) + R"(</p>
 
     <form method="post" action="/deauth_all">
-        <h2>Desautenticar TODAS las redes</h2>
+        <h2>⚠️ Desconectar TODAS las redes</h2>
+        <p style="font-size:13px">Ojo: apaga el WiFi del ESP32 y hay que reiniciarlo.</p>
         <input type="text" name="reason" placeholder="Código de motivo">
-        <input type="submit" value="Desautenticar todas">
+        <input type="submit" value="Desconectar todas">
     </form>
 
     <form method="post" action="/stop">
@@ -309,8 +311,8 @@ void handle_deauth() {
 
   if (wifi_number < num_networks) {
     html += R"(">
-        <h2>¡Ataque iniciado!</h2>
-        <p>Desautenticando la red número: )" + String(wifi_number) + R"(</p>
+        <h2>¡Desconexión iniciada!</h2>
+        <p>Desconectando los dispositivos de la red número: )" + String(wifi_number) + R"(</p>
         <p>Código de motivo: )" + String(reason) + R"(</p>
     </div>)";
     start_deauth(wifi_number, DEAUTH_TYPE_SINGLE, reason);
@@ -377,8 +379,8 @@ void handle_deauth_all() {
 </head>
 <body>
     <div class="alert">
-        <h2>¡Ataque a TODAS las redes!</h2>
-        <p>El WiFi se apagará ahora. Para detener el ataque, reinicia el ESP32.</p>
+        <h2>¡Desconectando TODAS las redes!</h2>
+        <p>El WiFi se apagará ahora. Para detenerlo, reinicia el ESP32.</p>
         <p>Código de motivo: )" + String(reason) + R"(</p>
     </div>
 </body>

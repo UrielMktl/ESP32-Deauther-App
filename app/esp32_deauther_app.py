@@ -123,17 +123,17 @@ class DeautherApp:
         self.tree.pack(fill="both", expand=True)
 
     def _build_attack_frame(self):
-        f = ttk.LabelFrame(self.root, text="Ataque Deauth", padding=8)
+        f = ttk.LabelFrame(self.root, text="Desconectar dispositivos", padding=8)
         f.pack(fill="x", padx=8, pady=4)
 
-        ttk.Label(f, text="Reason code:").grid(row=0, column=0, sticky="w")
+        ttk.Label(f, text="Motivo del aviso:").grid(row=0, column=0, sticky="w")
         self.reason_var = tk.StringVar(value=list(REASON_CODES.keys())[1])
         reasons = ttk.Combobox(f, textvariable=self.reason_var, values=list(REASON_CODES.keys()), width=42, state="readonly")
         reasons.grid(row=0, column=1, columnspan=2, padx=4, sticky="w")
 
-        ttk.Button(f, text="Lanzar Deauth (red seleccionada)", command=self.deauth_single).grid(row=1, column=0, padx=4, pady=4)
-        ttk.Button(f, text="Deauth a TODAS las redes", command=self.deauth_all).grid(row=1, column=1, padx=4, pady=4)
-        ttk.Button(f, text="Detener", command=self.stop_attack).grid(row=1, column=2, padx=4, pady=4)
+        ttk.Button(f, text="Desconectar red seleccionada", command=self.deauth_single).grid(row=1, column=0, padx=4, pady=4)
+        ttk.Button(f, text="Desconectar TODAS las redes", command=self.deauth_all).grid(row=1, column=1, padx=4, pady=4)
+        ttk.Button(f, text="Detener ataque", command=self.stop_attack).grid(row=1, column=2, padx=4, pady=4)
 
     def _build_clone_frame(self):
         f = ttk.LabelFrame(self.root, text="Clonador de red (Evil-Twin educativo: ingresa los datos)", padding=8)
@@ -277,18 +277,18 @@ class DeautherApp:
         if num is None:
             return
         reason = self._reason()
-        self.log("Lanzando Deauth en red #%d (reason %d)..." % (num, reason))
+        self.log("Desconectando red #%d (motivo %d)..." % (num, reason))
         threading.Thread(target=self._post, args=("/api/deauth", {"net_num": num, "reason": reason}), daemon=True).start()
 
     def deauth_all(self):
         reason = self._reason()
-        if not messagebox.askyesno("Confirmar", "Esto desautentica TODAS las redes y apaga el WiFi del ESP32.\nPara parar tendras que resetear el ESP32.\n¿Continuar?"):
+        if not messagebox.askyesno("Confirmar", "Esto desconecta TODAS las redes y apaga el WiFi del ESP32.\nPara parar tendrás que reiniciar el ESP32.\n¿Continuar?"):
             return
-        self.log("Lanzando Deauth en TODAS las redes (reason %d)..." % reason)
+        self.log("Desconectando TODAS las redes (motivo %d)..." % reason)
         threading.Thread(target=self._post, args=("/api/deauth_all", {"reason": reason}), daemon=True).start()
 
     def stop_attack(self):
-        self.log("Deteniendo ataque Deauth...")
+        self.log("Deteniendo ataque...")
         threading.Thread(target=self._post, args=("/api/stop", {}), daemon=True).start()
 
     # ---------------------------------------------------------- clonador
